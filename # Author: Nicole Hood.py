@@ -56,3 +56,22 @@ country_features= pd.get_dummies(users["cCountry"]).values.astype(np.float32)
 interest_lists = users["Interests"].apply(lambda s: re.findall(r"'([^']+)'", s))
 mlb = MultiLabelBinarizer()
 interest_features = mlb.fit_transform(interest_lists).astype(np.float32)
+
+# Stick the three pieces side by side into one big feature matrix.
+
+x= torch.tensor(np.hstack([age_features, interest_features, country_features]))
+
+print(f"Feature matrix: {tuple(x.shape)} (user x features)")
+print(f"  age groups: {age_features.shape[1]}, "
+      f"interests: {interest_features.shape[1]}, "
+      f"countries: {country_features.shape[1]}")
+#---------------------------------------------------------------
+#build the edge list in node number form 
+src = edges["UserID_A"].map(userid_to_node).values
+dst = edges["UserID_B"].map(userid_to_node).values
+edge_index = torch.tensor(np.vstack([src,dst]),dtype=torch.long)
+
+#make the friendship go both ways, so need to store each edge in both directions
+edge_index = to_undirected(edge_index)
+
+#----------------------------------------------------------------------------------
