@@ -208,6 +208,5 @@ Edges will be split into training and test sets. The model will predict the held
 - Anthropic's **Claude** was used to modify the Kaggle dataset to create the custom dataset for this project.
 - **Gemini** was used for clarification of article wording and for methodology and resource recommendations. It is acknowledged as a tool used during preparation, not as academic evidence for the technical claims in this project.
 
-## Disclaimer
 
-This is an academic prototype using simulated data. The sources cited here do not verify that any specific platform (Facebook, Instagram, X, LinkedIn) uses GNNs for friend recommendations, and this project makes no such claim.
+
