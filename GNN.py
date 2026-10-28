@@ -40,7 +40,7 @@ print(f"Users: {len(users):,}    Friendships: {len(edges):,}")
 #------------------------------------------------------------
 #Give each user a node number 
 # UserIDs are not 0...n-1 but the GNN need row numbers starting at 0
-users ["node_id"] = np.arrange(len(users))
+users ["node_id"] = np.arange(len(users))
 userid_to_node= dict(zip(users["UserID"], users["node_id"]))
 #----------------------------------------------------------------
 #build the node features ( one row per user)
