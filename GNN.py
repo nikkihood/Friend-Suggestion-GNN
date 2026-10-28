@@ -18,7 +18,7 @@ import pandas as pd
 import torch 
 from sklearn.preprocessing import MultiLabelBinarizer
 from torch_geometric.data import Data
-import torch_geometic.transforms as T
+import torch_geometric.transforms as T
 from torch_geometric.utils import to_undirected 
 
 #--------------------------------------------------------
@@ -49,7 +49,7 @@ userid_to_node= dict(zip(users["UserID"], users["node_id"]))
 age_features = pd.get_dummies(users["AgeGroup"]).values.astype(np.float32)
 
 #Country - One hot (big but fine for a prototype)
-country_features= pd.get_dummies(users["cCountry"]).values.astype(np.float32)
+country_features= pd.get_dummies(users["Country"]).values.astype(np.float32)
 
 #Intrests Multi-Hot vector( a 1 for every intrest the user has)
 # for example the column may look like "'Music','Travel','Music'" so ewe pull out the duplicate words between the quotes and collapse to a single 1
@@ -73,5 +73,11 @@ edge_index = torch.tensor(np.vstack([src,dst]),dtype=torch.long)
 
 #make the friendship go both ways, so need to store each edge in both directions
 edge_index = to_undirected(edge_index)
+
+#----------------------------------------------------------------------------------
+#put into a PyTorch Geometric Data object
+data = Data(x=x, edge_index=edge_index)
+print(data)
+print("undirected:" , data.is_undirected())
 
 #----------------------------------------------------------------------------------
