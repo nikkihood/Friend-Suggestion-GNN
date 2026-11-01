@@ -81,3 +81,30 @@ print(data)
 print("undirected:" , data.is_undirected())
 
 #----------------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# 6. Hide some friendships for validation and testing
+#    - The training graph only contains the friendships the model may see.
+#    - Validation/test friendships are removed from it, and fake
+#      "non-friendships" (negative samples) are added so the model has
+#      something to tell apart from real friendships.
+#    IMPORTANT: compute Common Neighbors / Jaccard / Adamic-Adar using ONLY
+#    train_data.edge_index, never the full graph, or you leak the answers.
+# --------------------------------------------------------------------------
+split = T.RandomLinkSplit(
+    num_val=0.10,
+    num_test=0.10,
+    is_undirected=True,
+    split_labels=True,
+    add_negative_train_samples=False,   # training negatives get sampled each epoch
+)
+train_data, val_data, test_data = split(data)
+ 
+print("\nTrain message-passing edges:", train_data.edge_index.size(1))
+print("Train positive pairs:       ", train_data.pos_edge_label_index.size(1))
+print("Val   positive/negative:    ",
+      val_data.pos_edge_label_index.size(1), "/", val_data.neg_edge_label_index.size(1))
+print("Test  positive/negative:    ",
+      test_data.pos_edge_label_index.size(1), "/", test_data.neg_edge_label_index.size(1))
+ 
+#-----------------------------------------------------------------------
+ 
