@@ -13,6 +13,8 @@
 # Import Libraries Numpy, Pandas, PyTorch, Scikit
 
 import re
+from pathlib import Path
+
 import numpy as np 
 import pandas as pd
 import torch 
@@ -22,9 +24,10 @@ import torch_geometric.transforms as T
 from torch_geometric.utils import to_undirected 
 
 #--------------------------------------------------------
-#load in the files 
-USERS_FILE = "SocialMediaUsersDataset_v2.csv"
-EDGES_FILE = "friendship_edges.csv"
+# load in the files relative to this script so it can be run from any directory
+PROJECT_DIR = Path(__file__).resolve().parent
+USERS_FILE = PROJECT_DIR / "SocialMediaUsersDataset_v2.csv"
+EDGES_FILE = PROJECT_DIR / "friendship_edges.csv"
 SEED= 42 # SEED: Fixes the starting point for all random choices in this project
 # Using the same seed means every run produces the same split and results,
 # so I can debug changes, compare the baselines and the GNN on identical
@@ -89,7 +92,7 @@ print("undirected:" , data.is_undirected())
 #      something to tell apart from real friendships.
 #    IMPORTANT: compute Common Neighbors / Jaccard / Adamic-Adar using ONLY
 #    train_data.edge_index, never the full graph, or you leak the answers.
-# --------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 split = T.RandomLinkSplit(
     num_val=0.10,
     num_test=0.10,

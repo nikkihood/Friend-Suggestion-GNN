@@ -124,8 +124,6 @@ A lightweight [Flask](https://flask.palletsprojects.com/en/stable/) app with a r
 
 ## Getting Started
 
-> Setup is planned for Phase 1. The steps below are a template and will be finalized once the environment is built.
-
 ```bash
 # Clone the repository
 git clone https://github.com/<your-username>/<repo-name>.git
@@ -139,24 +137,18 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+PyTorch and PyTorch Geometric must be installed in the same environment used to run
+the script. If your Python version does not have a compatible PyTorch wheel, create
+the environment with a supported Python version first.
+
 ---
 
 ## Usage
 
-> Planned. Commands and file names are placeholders until the code is finalized.
-
 ```bash
-# 1. Preprocess the data and build the graph
-python preprocess.py
-
-# 2. Train and evaluate the GCN
-python train.py
-
-# 3. Launch the Flask demo
-flask run
+# Build the graph and create train/validation/test link splits
+python GNN.py
 ```
-
-Then open `http://127.0.0.1:5000/recommend/<user_id>` to see recommended connections and similarity scores for a chosen user.
 
 ---
 
@@ -207,6 +199,5 @@ Edges will be split into training and test sets. The model will predict the held
 
 - Anthropic's **Claude** was used to modify the Kaggle dataset to create the custom dataset for this project.
 - **Gemini** was used for clarification of article wording and for methodology and resource recommendations. It is acknowledged as a tool used during preparation, not as academic evidence for the technical claims in this project.
-
 
 
