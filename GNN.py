@@ -91,7 +91,7 @@ print("undirected:" , data.is_undirected())
 #      "non-friendships" (negative samples) are added so the model has
 #      something to tell apart from real friendships.
 #    IMPORTANT: compute Common Neighbors / Jaccard / Adamic-Adar using ONLY
-#    train_data.edge_index, never the full graph, or you leak the answers.
+#    train_data.edge_index, never the full graph, or answers will be leaked.
 # ------------------------------------------------------------------------------
 split = T.RandomLinkSplit(
     num_val=0.10,
