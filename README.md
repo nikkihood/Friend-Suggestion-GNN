@@ -129,17 +129,18 @@ A lightweight [Flask](https://flask.palletsprojects.com/en/stable/) app with a r
 git clone https://github.com/<your-username>/<repo-name>.git
 cd <repo-name>
 
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+# Create and activate a virtual environment with Python 3.13 or older
+py -3.13 -m venv venv
+venv\Scripts\activate           # Windows Command Prompt
+# PowerShell: .\venv\Scripts\Activate.ps1
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
 PyTorch and PyTorch Geometric must be installed in the same environment used to run
-the script. If your Python version does not have a compatible PyTorch wheel, create
-the environment with a supported Python version first.
+the script. Python 3.14+ is not currently supported by this project's installed
+PyTorch/PyTorch Geometric stack; create the environment with Python 3.13 or older.
 
 ---
 
@@ -199,5 +200,3 @@ Edges will be split into training and test sets. The model will predict the held
 
 - Anthropic's **Claude** was used to modify the Kaggle dataset to create the custom dataset for this project.
 - **Gemini** was used for clarification of article wording and for methodology and resource recommendations. It is acknowledged as a tool used during preparation, not as academic evidence for the technical claims in this project.
-
-

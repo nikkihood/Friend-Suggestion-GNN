@@ -20,8 +20,11 @@ References
 """
  
 import random
+import sys
 from collections import defaultdict
- 
+
+
+
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import average_precision_score, roc_auc_score
@@ -29,7 +32,7 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.utils import negative_sampling
  
 # Running step 1 (it executes when imported) gives us the three graph splits.
-from step1_build_graph import SEED, test_data, train_data, val_data
+from GNN import SEED, test_data, train_data, val_data
  
 # --------------------------------------------------------------------------
 # 0. Settings you can play with
