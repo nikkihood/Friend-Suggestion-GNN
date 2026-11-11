@@ -101,8 +101,8 @@ def train():
     return loss.item()
  
  
-# --------------------------------------------------------------------------
-# 3. Evaluation with AUC and Average Precision
+# ----------------------------------------------------------------------------------
+# 3. Evaluation with Areas under the Curve and Average Precision
 # --------------------------------------------------------------------------
 @torch.no_grad()
 def evaluate(data):
@@ -167,7 +167,7 @@ for epoch in range(1, EPOCHS + 1):
     loss = train()
     if epoch % 10 == 0 or epoch == 1:
         val_auc, val_ap = evaluate(val_data)
-        print(f"Epoch {epoch:3d} | loss {loss:.4f} | val AUC {val_auc:.4f} | val AP {val_ap:.4f}")
+        print(f"Epoch {epoch:3d} | loss {loss:.4f} | validation Area Under the Curve {val_auc:.4f} | validation Average Precision {val_ap:.4f}")
         if val_auc > best_val_auc:
             best_val_auc = val_auc
             best_state = {k_: v.clone() for k_, v in model.state_dict().items()}
