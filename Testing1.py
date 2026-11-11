@@ -22,8 +22,7 @@ References
 import random
 import sys
 from collections import defaultdict
-
-
+import json
 
 import torch
 import torch.nn.functional as F
@@ -35,7 +34,7 @@ from torch_geometric.utils import negative_sampling
 from GNN import SEED, test_data, train_data, val_data
  
 # --------------------------------------------------------------------------
-# 0. Settings you can play with
+# 0. Settings 
 # --------------------------------------------------------------------------
 HIDDEN_DIM = 64      # size of the middle layer
 EMBED_DIM = 32       # size of each user's final embedding
@@ -182,3 +181,10 @@ print(f"AUC:            {test_auc:.4f}")
 print(f"Average Prec.:  {test_ap:.4f}")
 print(f"Precision@{K}:   {test_prec:.4f}  (averaged over up to {NUM_EVAL_USERS} users)")
  
+# Save the final numbers so step3_compare.py can put them in the
+# comparison table without retraining the model.
+
+with open("gcn_results.json", "w") as f:
+    json.dump({"AUC": test_auc, "AP": test_ap, f"Precision@{K}": test_prec,
+               "K": K, "num_eval_users": NUM_EVAL_USERS}, f, indent=2)
+print("Saved gcn_results.json")
