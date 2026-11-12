@@ -17,6 +17,7 @@ References
   - Introduction by Example (two-layer GCN):
       https://pytorch-geometric.readthedocs.io/en/2.6.1/get_started/introduction.html
   - Kipf & Welling, GCN paper: https://arxiv.org/abs/1609.02907
+  - Also assisted by copilot for debugging and certain code elements
 """
  
 import random

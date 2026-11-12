@@ -15,6 +15,7 @@ References
   - Adamic & Adar, "Friends and neighbors on the Web," Social Networks, 2003.
   - Liben-Nowell & Kleinberg, "The link-prediction problem for social networks,"
     JASIST, 2007.
+  - Also had coding/debugging assistance from Copilot
 """
 
 import random
@@ -29,7 +30,7 @@ METHODS = ["Common Neighbors", "Jaccard", "Adamic-Adar"]
 
 # --------------------------------------------------------------------------
 # 1. Turn an edge list into an adjacency matrix
-#    IMPORTANT: pass in only the edges the model is allowed to see.
+#  IMPORTANT: pass in only the edges the model is allowed to see.
 #    For the test evaluation that is test_data.edge_index (train + validation
 #    friendships). The hidden test friendships are NOT in it.
 # --------------------------------------------------------------------------
@@ -93,7 +94,7 @@ class Scorer:
         raise ValueError(method)
 
 
-# --------------------------------------------------------------------------
+# ------------------------------------------------------------------
 # 2. AUC and Average Precision on the test pairs
 # --------------------------------------------------------------------------
 def auc_ap(scorer, pos_pairs, neg_pairs, method):
@@ -104,8 +105,8 @@ def auc_ap(scorer, pos_pairs, neg_pairs, method):
 
 
 # --------------------------------------------------------------------------
-# 3. Precision@K (same idea and same sampled users as step2_train_gcn.py)
-# --------------------------------------------------------------------------
+# 3. Precision@K 
+# ----------------------------------------------------------------------
 def build_hidden_known(pos_pairs, edge_index):
     """hidden = the answer key (test friendships); known = friends already seen."""
     hidden, known = defaultdict(set), defaultdict(set)
