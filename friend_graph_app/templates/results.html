@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Results | Friend Recommendation with Graph Neural Networks{% endblock %}
+{% block content %}
+<main class="page">
+
+  <h2>What was compared</h2>
+  <p>
+    This project simulates a "People You May Know" feature. The goal was to predict which pairs of users in a
+    100,000-user network are friends. Some friendships were hidden from every method first (80% training,
+    10% validation, 10% test), and each method then had to tell the hidden real friendships apart from
+    an equal number of fake pairs.
+  </p>
+  <p>
+    A two-layer Graph Convolutional Network (GCN) that uses each user's age group, interests and country plus the
+    friendship graph was compared against three classic methods that use only the graph.
+    All methods were scored on the same hidden test friendships.
+  </p>
+
+  <h2>The baseline algorithms</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Common Neighbors</h3>
+      <p>Counts the friends two users share. More mutual friends means a higher score.</p>
+    </div>
+    <div class="card">
+      <h3>Jaccard Coefficient</h3>
+      <p>Shared friends divided by all distinct friends of the two users. It keeps people with huge friend lists from always winning.</p>
+    </div>
+    <div class="card">
+      <h3>Adamic-Adar Index</h3>
+      <p>Counts shared friends too, but a shared friend with few connections counts more than a very popular one.</p>
+    </div>
+  </div>
+  <p class="muted">
+    These three only look at who is friends with whom, so they ignore age, interests and location.
+    Random Walk with Restart was proposed but not tested in this project.
+  </p>
+
+  <h2>Results</h2>
+  <table class="results">
+    <thead>
+      <tr><th>Method</th><th>AUC</th><th>Average Precision</th><th>Precision@10</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Common Neighbors</td><td>0.5543</td><td>0.5541</td><td>0.0072</td></tr>
+      <tr><td>Jaccard Coefficient</td><td>0.5543</td><td>0.5543</td><td>0.0084</td></tr>
+      <tr><td>Adamic-Adar Index</td><td>0.5543</td><td>0.5543</td><td>0.0082</td></tr>
+      <tr class="gcn"><td>GCN (two-layer)</td><td>0.8139</td><td>0.8257</td><td>0.0004</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">AUC and Average Precision: higher is better, 0.5 is chance. Precision@10 is averaged over 500 users.</p>
+
+  <figure class="figure">
+    <img src="{{ url_for('static', filename='results_comparison.png') }}" alt="Bar charts comparing the baselines and the GCN">
+    <figcaption>Baselines vs. GCN on the same hidden test friendships.</figcaption>
+  </figure>
+  <figure class="figure">
+    <img src="{{ url_for('static', filename='gcn_training_results.png') }}" alt="GCN training loss and validation metrics by epoch">
+    <figcaption>GCN training: loss falls from 0.686 to 0.481 while validation AUC rises from 0.716 to 0.813.</figcaption>
+  </figure>
+
+  <h2>What the results show</h2>
+  <div class="card">
+    <p>
+      <b>The GCN is much better at telling real friendships from fake ones.</b>
+      Its AUC of 0.814 means a real friendship outscored a fake pair about 81% of the time, versus 55% for the
+      three baselines. Its validation and test scores were almost identical, so it generalized instead of memorizing.
+    </p>
+    <p>
+      <b>The baselines are better at the top of the recommendation list.</b>
+      On Precision@10 they scored 0.0072 to 0.0084, about 18 to 21 times the GCN's 0.0004.
+    </p>
+    <p>
+      <b>Why the baselines score so low on AUC.</b> They can only give a pair a non-zero score if the two users already
+      share a friend. That was true for just 10.9% of real test friendships (and 0.1% of fake pairs), so the other
+      89% look the same as fake pairs to them. When they do have a mutual friend to count, though, they are precise.
+    </p>
+    <p>
+      The two kinds of method seem to capture different information: features say who is generally likely to be
+      friends, and mutual friends are a sharp signal for the minority of pairs that have them.
+      That is the motivation for the hybrid approach in the project proposal.
+    </p>
+  </div>
+
+  <h2>Limitations of the two-layer GCN</h2>
+  <div class="card">
+    <ul>
+      <li><b>Limited features.</b> The model sees age group (six buckets, not exact age), interests and country. It does not see city,
+        and 12.7% of the friendships in this dataset are between people in the same city, so a strong signal is missing.</li>
+      <li><b>Trained on an easier question than Precision@10.</b> Training teaches it to separate real friends from random strangers.
+        Precision@10 asks it to pick the true friend from many similar people, which needs much finer ranking.</li>
+      <li><b>Only two hops.</b> Two layers means each user only hears from friends and friends of friends.</li>
+      <li><b>Simple scoring.</b> Pairs are scored with a dot product of two embeddings, which is a limited way to combine two users.</li>
+      <li><b>Cannot handle new users well.</b> A GCN is transductive. Users with no friends are represented only by their own features,
+        and new users would need retraining.</li>
+      <li><b>Synthetic data.</b> Friendships were generated by a rule using age, interests and location plus randomness,
+        so the results show how well each method recovers those patterns, not how it would do on a real social network.</li>
+      <li><b>Small evaluation.</b> One random seed, and Precision@10 averaged over 500 users, so the numbers can shift between runs.
+        Users with no friends have no hidden answers, so cold-start behavior was not tested.</li>
+    </ul>
+  </div>
+
+  <h2>Ideas to improve Precision@K</h2>
+  <div class="note">These are future directions. None of them has been tested in this project yet.</div>
+  <div class="card">
+    <ul>
+      <li><b>Add city and exact age</b> to the node features, for example with a learned city embedding, since one-hot columns for about 25,000 cities would be too large.</li>
+      <li><b>Build the hybrid model</b> by feeding Common Neighbors, Jaccard and Adamic-Adar scores into the pair-scoring step alongside the learned embeddings.</li>
+      <li><b>Train with harder negatives.</b> Sample fake pairs that are similar in age, interests and location, so training matches what Precision@K asks.</li>
+      <li><b>Rank in two stages.</b> Take friends-of-friends and similar users as candidates, then let the model re-rank only those instead of searching all 100,000 users.</li>
+      <li><b>Try GraphSAGE</b> and a learned scoring layer instead of a dot product, and tune settings such as embedding size and epochs using validation scores.</li>
+      <li><b>Evaluate more carefully</b> with more users, larger K (such as 50 or 100) and several random seeds.</li>
+    </ul>
+  </div>
+
+</main>
+{% endblock %}

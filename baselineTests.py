@@ -135,3 +135,4 @@ def precision_at_k(row_score_fn, hidden, known, k=10, num_users=500, seed=42):
         top = np.argpartition(-s, k)[:k]
         precisions.append(sum(int(v) in hidden[u] for v in top) / k)
     return float(np.mean(precisions))
+print("done")

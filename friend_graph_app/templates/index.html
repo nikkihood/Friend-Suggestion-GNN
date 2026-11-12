@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block head %}
+  <script src="{{ url_for('static', filename='vis-network.min.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="explorer">
+  <div class="controls">
+    <span class="label">Color nodes by:</span>
+    <button id="btn-age" class="toggle active">Age group</button>
+    <button id="btn-country" class="toggle">Country</button>
+    <button id="btn-reset" class="toggle plain">Reset graph</button>
+    <span class="hint">Click a person to see their profile and friends. A glowing halo means that friend also knows other friends of the person you clicked.</span>
+  </div>
+  <div class="main">
+    <div id="graph"></div>
+    <aside id="panel">
+      <div id="legend"></div>
+      <div id="details"><p class="muted">Click a node to see details.</p></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const AGE_COLORS = {"21-24":"#e74c3c","25-34":"#e67e22","35-44":"#f1c40f","45-54":"#27ae60","55-64":"#2980b9","65+":"#8e44ad"};
+const COUNTRY_PALETTE = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#17becf","#bcbd22","#7f7f7f"];
+const OTHER_COLOR = "#b0b7bd";
+
+let colorMode = "age";
+let people = {};                 // id -> profile
+const nodes = new vis.DataSet();
+const edges = new vis.DataSet();
+let haloIds = new Set();         // nodes currently glowing
+let haloStrength = {};           // id -> mutual count
+let centerId = null;
+let topCountries = [];           // the countries that get their own color
+
+function countryColor(c) {
+  const i = topCountries.indexOf(c);
+  return i >= 0 ? COUNTRY_PALETTE[i] : OTHER_COLOR;
+}
+function colorFor(p) {
+  return colorMode === "age" ? (AGE_COLORS[p.ageGroup] || OTHER_COLOR) : countryColor(p.country);
+}
+
+function nodeStyle(p) {
+  const halo = haloIds.has(p.id);
+  const strength = haloStrength[p.id] || 0;
+  const isCenter = p.id === centerId;
+  return {
+    id: p.id,
+    label: p.name,
+    color: {
+      background: colorFor(p),
+      border: isCenter ? "#000000" : (halo ? "#ffd400" : "#ffffff"),
+      highlight: {background: colorFor(p), border: "#000000"}
+    },
+    borderWidth: isCenter ? 4 : (halo ? 3 : 1.5),
+    size: isCenter ? 26 : 16,
+    // the halo: a soft glowing shadow, bigger when they share more mutual friends
+    shadow: halo ? {enabled: true, color: "rgba(255,212,0,0.95)", size: 14 + strength * 5, x: 0, y: 0} : {enabled: false}
+  };
+}
+
+function refreshAll() {
+  nodes.update(Object.values(people).filter(p => nodes.get(p.id)).map(nodeStyle));
+  drawLegend();
+}
+
+function addPeople(list) {
+  list.forEach(p => { people[p.id] = Object.assign(people[p.id] || {}, p); });
+}
+function addNodes(list) {
+  addPeople(list);
+  list.forEach(p => { if (!nodes.get(p.id)) nodes.add(nodeStyle(people[p.id])); });
+}
+function addLinks(list) {
+  list.forEach(l => {
+    const id = Math.min(l.from, l.to) + "-" + Math.max(l.from, l.to);
+    if (!edges.get(id)) edges.add({id: id, from: l.from, to: l.to, color: {color: "#c8cdd2"}, width: 1});
+  });
+}
+
+function drawLegend() {
+  const box = document.getElementById("legend");
+  let items;
+  if (colorMode === "age") {
+    items = Object.entries(AGE_COLORS);
+  } else {
+    items = topCountries.map(c => [c, countryColor(c)]).concat([["Other countries", OTHER_COLOR]]);
+  }
+  box.innerHTML = "<strong>" + (colorMode === "age" ? "Age group" : "Country") + "</strong>" +
+    items.map(([n, c]) => `<div class="leg"><span class="dot" style="background:${c}"></span>${n}</div>`).join("") +
+    `<div class="leg"><span class="dot halo-dot"></span>Mutual-friend halo</div>`;
+}
+
+function pickTopCountries() {
+  const counts = {};
+  Object.values(people).forEach(p => counts[p.country] = (counts[p.country] || 0) + 1);
+  topCountries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, COUNTRY_PALETTE.length).map(e => e[0]);
+}
+
+const network = new vis.Network(document.getElementById("graph"), {nodes, edges}, {
+  nodes: {shape: "dot", font: {size: 12, face: "Segoe UI, Arial"}},
+  physics: {solver: "forceAtlas2Based", stabilization: {iterations: 150}},
+  interaction: {hover: true, tooltipDelay: 150}
+});
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function showDetails(p, mutualNames) {
+  const el = document.getElementById("details");
+  const tags = p.interests.map(i => `<span class="tag">${esc(i)}</span>`).join("");
+  let html = `<h2>${esc(p.name)}</h2>
+    <p><b>Age:</b> ${p.age} (${esc(p.ageGroup)})<br>
+       <b>Gender:</b> ${esc(p.gender)}<br>
+       <b>Location:</b> ${esc(p.city)}, ${esc(p.country)}<br>
+       <b>Friends:</b> ${p.friendCount}</p>
+    <p><b>Interests</b><br>${tags}</p>`;
+  if (mutualNames) html += mutualNames;
+  el.innerHTML = html;
+}
+
+async function clickPerson(id) {
+  const res = await fetch("/api/expand/" + id);
+  const data = await res.json();
+  centerId = id;
+  haloIds = new Set(data.nodes.filter(n => n.mutualCount > 0).map(n => n.id));
+  haloStrength = {};
+  data.nodes.forEach(n => haloStrength[n.id] = n.mutualCount);
+  addNodes(data.nodes);
+  addLinks(data.links);
+  pickTopCountries();
+  refreshAll();
+
+  // side panel: profile plus a list of the friends who share mutual friends
+  const p = people[id];
+  const haloed = data.nodes.filter(n => n.mutualCount > 0).sort((a, b) => b.mutualCount - a.mutualCount);
+  let extra = `<p><b>Friends shown:</b> ${data.nodes.length}</p>`;
+  if (haloed.length) {
+    extra += `<p><b>Friends with mutual friends</b> (${haloed.length}). Click a name to move on:</p><ul class="friendlist">` +
+      haloed.map(n => `<li><a href="#" data-id="${n.id}">${esc(n.name)}</a> <span class="muted">${n.mutualCount} mutual</span></li>`).join("") + "</ul>";
+  } else {
+    extra += `<p class="muted">None of ${esc(p.name)}'s friends know each other, so there are no halos here.</p>`;
+  }
+  const others = data.nodes.filter(n => n.mutualCount === 0);
+  if (others.length) {
+    extra += `<p><b>Other friends</b> (${others.length}):</p><ul class="friendlist">` +
+      others.map(n => `<li><a href="#" data-id="${n.id}">${esc(n.name)}</a> <span class="muted">${esc(n.country)}, ${n.age}</span></li>`).join("") + "</ul>";
+  }
+  showDetails(p, extra);
+  network.selectNodes([id]);
+  network.focus(id, {scale: 1.0, animation: true});
+}
+
+network.on("click", params => { if (params.nodes.length) clickPerson(params.nodes[0]); });
+document.getElementById("details").addEventListener("click", e => {
+  const a = e.target.closest("a[data-id]");
+  if (a) { e.preventDefault(); clickPerson(parseInt(a.dataset.id)); }
+});
+
+function setMode(mode) {
+  colorMode = mode;
+  document.getElementById("btn-age").classList.toggle("active", mode === "age");
+  document.getElementById("btn-country").classList.toggle("active", mode === "country");
+  refreshAll();
+}
+document.getElementById("btn-age").onclick = () => setMode("age");
+document.getElementById("btn-country").onclick = () => setMode("country");
+document.getElementById("btn-reset").onclick = () => loadSample();
+
+async function loadSample() {
+  const res = await fetch("/api/sample");
+  const data = await res.json();
+  nodes.clear(); edges.clear(); people = {}; haloIds = new Set(); haloStrength = {}; centerId = null;
+  addPeople(data.nodes);
+  pickTopCountries();
+  data.nodes.forEach(p => nodes.add(nodeStyle(p)));
+  addLinks(data.links);
+  drawLegend();
+  const sug = (data.suggested || []).map(s =>
+    `<li><a href="#" data-id="${s.id}">${esc(s.name)}</a> <span class="muted">${s.haloed} friends with mutual friends</span></li>`).join("");
+  document.getElementById("details").innerHTML =
+    '<p class="muted">Click a node to see details.</p>' +
+    (sug ? '<p><b>Good places to start</b> (lots of mutual friends, so you will see halos):</p><ul class="friendlist">' + sug + '</ul>' : '');
+  // zoom the view so every person starts on screen once the layout settles
+  setTimeout(() => network.fit({animation: {duration: 400}}), 2500);
+}
+loadSample();
+</script>
+{% endblock %}
